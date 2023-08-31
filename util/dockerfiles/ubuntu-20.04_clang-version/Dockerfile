@@ -23,8 +23,7 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-FROM ubuntu:20.04
-
+FROM --platform=${BUILDPLATFORM} ubuntu:20.04
 # Valid version values:
 # 6.0
 # 7
@@ -36,7 +35,7 @@ FROM ubuntu:20.04
 ARG version
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt -y update && apt -y upgrade && \
+RUN apt -y update && \
     apt -y install git m4 scons zlib1g zlib1g-dev libprotobuf-dev \
     protobuf-compiler libprotoc-dev libgoogle-perftools-dev python3-dev \
     python-is-python3 doxygen libboost-all-dev libhdf5-serial-dev \
