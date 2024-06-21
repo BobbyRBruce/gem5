@@ -33,7 +33,6 @@ import os
 import re
 import sys
 
-from maint.lib import maintainers
 from style.repo import GitRepo
 
 
@@ -66,47 +65,28 @@ def _printErrorQuit(error_message):
 
     print(
         """
-The first line of a commit must contain one or more gem5 tags separated by
-commas (see MAINTAINERS.yaml for the possible tags), followed by a colon and
-a commit title. There must be no leading nor trailing whitespaces.
 
-This header line must then be followed by an empty line. A detailed message,
-although highly recommended, is not mandatory and can follow that empty line.
+This header (title) line must be provided as a summary of the commit's change.
+It cannot not exceed 65 characters in length. The header can then be followed
+by a more detaoled message seperated from the header by an empty line with no
+trailing whitespace. A detailed message is highly recommended but not
+mandatory. Likewise we recommend that the description not exceed 72 characters
+in width though this is not enforced.
+
 
 e.g.:
-    cpu: Refactor branch predictors
+    Refactor branch predictors
 
     Refactor branch predictor code to improve its readability, moving functions
     X and Y to the base class...
 
 e.g.:
-    mem,mem-cache: Improve packet class readability
+    Improve packet class readability
 
     The packet class...
 """
     )
     sys.exit(1)
-
-
-def _validateTags(commit_header):
-    """
-    Check if all tags in the commit header belong to the list of valid
-    gem5 tags.
-
-    @param commit_header The first line of the commit message.
-    """
-
-    # List of valid tags
-    maintainer_dict = maintainers.Maintainers.from_file()
-    valid_tags = [tag for tag, _ in maintainer_dict]
-
-    # Add special tags not in MAINTAINERS.yaml
-    valid_tags.extend(["RFC", "WIP"])
-
-    tags = "".join(commit_header.split(":")[0].split()).split(",")
-    if any(tag not in valid_tags for tag in tags):
-        invalid_tag = next(tag for tag in tags if tag not in valid_tags)
-        _printErrorQuit("Invalid Gem5 tag: " + invalid_tag)
 
 
 # Go to git directory
@@ -119,23 +99,14 @@ commit_message = open(sys.argv[1]).read()
 # a commit title
 commit_message_lines = commit_message.splitlines()
 commit_header = commit_message_lines[0]
-commit_header_match = re.search(
-    r"^(fixup! )?(\S[\w\-][,\s*[\w\-]+]*:.+\S$)", commit_header
-)
-if commit_header_match is None:
-    _printErrorQuit("Invalid commit header")
-if commit_header_match.group(1) == "fixup! ":
-    sys.exit(0)
-_validateTags(commit_header_match.group(2))
 
 # Make sure commit title does not exceed threshold. This line is limited to
 # a smaller number because version control systems may add a prefix, causing
 # line-wrapping for longer lines
-commit_title = commit_header.split(":")[1]
 max_header_size = 65
 if len(commit_header) > max_header_size:
     _printErrorQuit(
-        "The commit header (tags + title) is too long ("
+        "The commit header (title) is too long ("
         + str(len(commit_header))
         + " > "
         + str(max_header_size)
