@@ -147,6 +147,11 @@ class AbstractCacheHierarchy(SubSystem):
         """This adds the LLC to the root node"""
         return self._root.add_child(*args, **kwargs)
 
+    def _pre_instantiate(self):
+        """Called to set up anything needed before `m5.instantiate` but after
+        the board has called `_connect_things`."""
+        pass
+
     def traverse(
         self, node: CacheNode, visit: Callable[[CacheNode, int], None]
     ) -> int:

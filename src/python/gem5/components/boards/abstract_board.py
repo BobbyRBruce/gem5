@@ -41,6 +41,7 @@ from m5.objects import (
     ClockDomain,
     IOXBar,
     Port,
+    Root,
     SrcClockDomain,
     System,
     VoltageDomain,
@@ -384,12 +385,24 @@ class AbstractBoard:
             self.get_cache_hierarchy()._post_instantiate()
         self.get_memory()._post_instantiate()
 
-    def _pre_instantiate(self):
-        """To be called immediately before ``m5.instantiate``. This is where
-        ``_connect_things`` is executed by default."""
+    def _pre_instantiate(self) -> Root:
+        """To be called  before ``m5.instantiate``. This is where
+        ``_connect_things`` is executed by default. The function returns the
+        Root object of the simulation."""
 
         # Connect the memory, processor, and cache hierarchy.
         self._connect_things()
+
+    def _post_root_creation(self):
+        """To be called immediately after the root object has been created but
+        before `m5.instantiate`."""
+
+    def _post_connect_things(self):
+        """Called after ``_connect_things`` has been called (but prior to
+        `m5.instantiate`). This is where components can be connected to the
+        board after the memory, processor, and cache hierarchy have been
+        connected."""
+        pass
 
     def _connect_things_check(self):
         """

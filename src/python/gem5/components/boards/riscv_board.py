@@ -507,7 +507,7 @@ class RiscvBoard(AbstractSystemBoard, KernelDiskWorkload):
         else:
             self.workload.kernel_addr = 0x0
             self.workload.entry_point = 0x80000000
-        self._connect_things()
+        super()._pre_instantiate()
 
     @overrides(KernelDiskWorkload)
     def _add_disk_to_board(self, disk_image: AbstractResource):

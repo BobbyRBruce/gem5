@@ -76,6 +76,11 @@ class AbstractProcessor(SubSystem):
     def get_isa(self) -> ISA:
         return self._isa
 
+    def _pre_instantiate(self):
+        """Called to set up anything needed before `m5.instantiate` but after
+        the board has called `_connect_things`."""
+        pass
+
     @abstractmethod
     def incorporate_processor(self, board: AbstractBoard) -> None:
         raise NotImplementedError

@@ -91,6 +91,11 @@ class AbstractMemorySystem(SubSystem):
         """
         raise NotImplementedError
 
+    def _pre_instantiate(self):
+        """Called to set up anything needed before `m5.instantiate` but after
+        the board has called `_connect_things`."""
+        pass
+
     def _post_instantiate(self) -> None:
         """Called to set up anything needed after ``m5.instantiate``."""
         pass
