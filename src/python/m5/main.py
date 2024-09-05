@@ -262,6 +262,8 @@ def parse_options():
         + " [Default: %default]",
     )
 
+    option("--is-child-process", action="store_true", default=False)
+
     # Debugging options
     group("Debugging Options")
     option(
@@ -562,8 +564,9 @@ def main():
     # update the system path with elements from the -p option
     sys.path[0:0] = options.path
 
-    # set stats options
-    stats.addStatVisitor(options.stats_file)
+    if not options.is_child_process:
+        # set stats options
+        stats.addStatVisitor(options.stats_file)
 
     # Disable listeners unless running interactively or explicitly
     # enabled
