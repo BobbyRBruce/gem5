@@ -1,0 +1,4 @@
+[submodule "ext/pybind11"]
+	path = ext/pybind11
+	url = https://github.com/bobbyrbruce/pybind11.git
+	branch = gcc-12-bound-check-fix-gem5-integration
