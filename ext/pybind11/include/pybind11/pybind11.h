@@ -1372,6 +1372,8 @@ protected:
         tinfo->default_holder = rec.default_holder;
         tinfo->module_local = rec.module_local;
 
+
+
         with_internals([&](internals &internals) {
             auto tindex = std::type_index(*rec.type);
             tinfo->direct_conversions = &internals.direct_conversions[tindex];
@@ -1380,7 +1382,21 @@ protected:
             } else {
                 internals.registered_types_cpp[tindex] = tinfo;
             }
+
+            PYBIND11_WARNING_PUSH
+#if defined(__GNUC__) && __GNUC__ == 12
+            // When using GCC 12 the `array-bounds` and `stringop-overread`
+            // warnings are disabled as they trigger false positive warnings.
+            //
+            // This is a known GCC 12 issue and is discussed here:
+            // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=115824. This
+            // solution is based on advice given in this discussion but
+            // refactored with `PYBIND11_WARNINT_DISABLE_GCC` MACRO.
+            PYBIND11_WARNING_DISABLE_GCC("-Warray-bounds")
+            PYBIND11_WARNING_DISABLE_GCC("-Wstringop-overread")
+#endif
             internals.registered_types_py[(PyTypeObject *) m_ptr] = {tinfo};
+            PYBIND11_WARNING_POP
         });
 
         if (rec.bases.size() > 1 || rec.multiple_inheritance) {
