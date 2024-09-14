@@ -87,7 +87,6 @@ def _gem5_args_for_multiprocessing(name):
         arguments.append(f"--path={':'.join(options.path)}")
     if options.quiet:
         arguments.append("--quiet")
-    arguments.append("--is-child-process")
 
     return arguments
 

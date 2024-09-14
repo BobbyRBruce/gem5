@@ -628,12 +628,6 @@ class Simulator:
         options.outdir = str(new_outdir)
         setOutputDir(options.outdir)
 
-        from m5 import stats
-
-        print("Setting stats output directory to", options.outdir)
-        print("Setting text stats output directory to", options.stats_file)
-        stats.addStatVisitor(options.stats_file)
-
     def _instantiate(self) -> None:
         """
         This method will instantiate the board and carry out necessary
