@@ -257,7 +257,7 @@ get_cpu_online_mask(ThreadContext *tc)
     RiscvLinux::cpumask_t *cpu_online_mask = cpumask_malloc(tc);
     if (cpu_online_mask != nullptr) {
         for (int i = 0; i < tc->getSystemPtr()->threads.size(); i++) {
-            CPU_SET(i, (cpu_set_t *)&cpu_online_mask->bits);
+            //CPU_SET(i, (cpu_set_t *)&cpu_online_mask->bits);
         }
     }
 
