@@ -228,3 +228,12 @@ def spatter_exit_generator(spatter_gen: SpatterGenerator):
     while True:
         assert isinstance(spatter_gen, SpatterGenerator)
         yield from spatter_gen.handle_spatter_exit()
+
+
+def get_tick_interrupt_generator():
+    while True:
+        print("Running Generator to handle get tick interrupt..")
+        print("Currently at Tick: ", m5.curTick())
+        print("Done!")
+        print("Returning False to continue simulation")
+        yield False

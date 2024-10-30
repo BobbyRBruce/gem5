@@ -56,6 +56,7 @@ class ExitEvent(Enum):
     PERF_COUNTER_INTERRUPT = "performance counter interrupt"
     KERNEL_PANIC = "kernel panic in simulated system"
     KERNEL_OOPS = "kernel oops in simulated system"
+    GET_TICK_INTERRUPT = "get tick interrupt received"
 
     @classmethod
     def translate_exit_status(cls, exit_string: str) -> "ExitEvent":
@@ -118,6 +119,9 @@ class ExitEvent(Enum):
             return ExitEvent.EXIT
         elif exit_string.endswith("received all expected responses."):
             return ExitEvent.SPATTER_EXIT
+        elif exit_string.endswith("get tick interrupt received"):
+            print("get tick interrupt received in Python Simulate module")
+            return ExitEvent.GET_TICK_INTERRUPT
         raise NotImplementedError(
             f"Exit event '{exit_string}' not implemented"
         )

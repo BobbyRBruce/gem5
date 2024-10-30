@@ -139,7 +139,11 @@ void
 exitNowHandler(int sigtype)
 {
     async_event = true;
-    async_exit = true;
+
+    //Turning this off for now.
+    //async_exit = true;
+    std::cout << "Get-Tick Interrupt received " << std::endl;
+    async_get_tick = true;
     /* Wake up some event queue to handle event */
     getEventQueue(0)->wakeup();
 }

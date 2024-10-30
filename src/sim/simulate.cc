@@ -317,10 +317,16 @@ doSimLoop(EventQueue *eventq)
                 pollQueue.service();
             }
 
-            if (async_exit) {
-                async_exit = false;
-                exitSimLoop("user interrupt received");
+            if (async_get_tick) {
+                async_get_tick = false;
+                std::cout << "Exiting the Simulation Loop " << std::endl;
+                exitSimLoop("get tick interrupt received");
             }
+
+            //) {
+            //    async_exit = false;
+            //    exitSimLoop("user interrupt received");
+            //}
 
             if (async_exception) {
                 async_exception = false;

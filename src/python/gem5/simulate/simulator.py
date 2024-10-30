@@ -53,6 +53,7 @@ from .exit_event import ExitEvent
 from .exit_event_generators import (
     dump_stats_generator,
     exit_generator,
+    get_tick_interrupt_generator,
     reset_stats_generator,
     save_checkpoint_generator,
     skip_generator,
@@ -314,6 +315,7 @@ class Simulator:
         # We specify a dictionary here outlining the default behavior for each
         # exit event. Each exit event is mapped to a generator.
         self._default_on_exit_dict = {
+            ExitEvent.GET_TICK_INTERRUPT: get_tick_interrupt_generator(),
             ExitEvent.EXIT: exit_generator(),
             ExitEvent.CHECKPOINT: warn_default_decorator(
                 save_checkpoint_generator,

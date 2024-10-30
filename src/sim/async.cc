@@ -32,7 +32,8 @@ namespace gem5
 volatile bool async_event = false;
 volatile bool async_statdump = false;
 volatile bool async_statreset = false;
-volatile bool async_exit = false;
+volatile bool async_get_tick = false;
+volatile bool diagnostic_exit = false;
 volatile bool async_io = false;
 volatile bool async_exception = false;
 
