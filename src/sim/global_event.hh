@@ -30,6 +30,7 @@
 #ifndef __SIM_GLOBAL_EVENT_HH__
 #define __SIM_GLOBAL_EVENT_HH__
 
+#include <map>
 #include <mutex>
 #include <vector>
 
@@ -211,65 +212,46 @@ class GlobalEvent : public BaseGlobalEventTemplate<GlobalEvent>
  */
 class ExitEvent : public GlobalEvent
 {
+  private:
+
+    const std::string type;
+
+    // Right now i'm just making this string to string but it could be better.
+    const std::map<std::string, std::string> payload;
+
   public:
 
     /**
      * Used to create an ExitEvent that will exit the simulation loop
      * immediately.
      */
-    ExitEvent(): ExitEvent(curTick()){}
-
-    /**
-     * Used to create an ExitEvent that will exit the simulation loop at
-     * the specified tick.
-     *
-     * @param[in] when The tick at which the simulation should exit.
-     */
-    ExitEvent(Tick when) :
-        GlobalEvent(when, Sim_Exit_Pri, Flags(Scheduled & IsExitEvent))
+    ExitEvent(
+        Tick when,
+        std::map<std::string, std::string> payload = {},
+        std::string type = "lazy" // Change this to something smarter.
+    ) : GlobalEvent(when, Sim_Exit_Pri, Flags(Scheduled & IsExitEvent)),
+        type(type), payload(payload)
     {
         schedule(when);
     }
 
     ~ExitEvent() {}
 
-    /**
-     * The process method for the ExitEvent. This method is called when the
-     * event is processed. It will call the `process_exit` method and then
-     * check if the simulation loop should be reentered.
-     *
-     * The `process_exit` method is a virtual method that can be overridden
-     * by derived classes to perform additional actions when the simulation.
-     *
-     * The `reenter_simloop` method is a virtual method that can be overridden
-     * by derived classes to determine if the simulation loop should be
-     * reentered after the event is processed.
-     */
-    void process() final {
-        this->process_exit();
-        if (this->reenter_simloop())
-        {
-            simulate();
-        }
+    std::map<std::string, std::string> getPayload() const
+    {
+        return payload;
+    }
+
+    std::string getType() const
+    {
+        return type;
     }
 
     const char *description() const override {
         return "ExitEvent: Exit the simulation with no further action.";
-    }
+   }
 
-    void process_exit() {
-
-    }
-
-
-    bool reenter_simloop() const
-    {
-        /**
-         * This function is used to determine if after the exit event is
-         * processed the simulation loop should be reentered.
-         */
-        return false;
-    }
+    void process() override {}
 };
 
 /**

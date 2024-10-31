@@ -320,7 +320,7 @@ doSimLoop(EventQueue *eventq)
             if (async_get_tick) {
                 async_get_tick = false;
                 std::cout << "Exiting the Simulation Loop " << std::endl;
-                exitSimLoop("get tick interrupt received");
+                ExitEvent(curTick() + 1);
             }
 
             //) {

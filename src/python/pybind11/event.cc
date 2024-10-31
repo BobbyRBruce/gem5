@@ -144,7 +144,7 @@ pybind_init_event(py::module_ &m_native)
                 std::unique_ptr<ExitEvent, py::nodelete>>(
                 m, "ExitEvent")
           .def("description", &ExitEvent::description)
-          .def("reenter_simloop", &ExitEvent::reenter_simloop)
+          .def("getPayload", &ExitEvent::getPayload)
           ;
 
     // Event base class. These should never be returned directly to
