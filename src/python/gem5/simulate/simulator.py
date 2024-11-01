@@ -687,7 +687,7 @@ class Simulator:
             # any final things.
             self._board._post_instantiate()
 
-    def run(self, max_ticks: Optional[int] = None) -> GlobalSimLoopExitEvent:
+    def run(self, max_ticks: Optional[int] = None) -> ExitEvent:
         """
         This function will start or continue the simulator run and handle exit
         events accordingly. If the the exit event is handled by returning to
@@ -725,55 +725,14 @@ class Simulator:
         while True:
             self._last_exit_event = m5.simulate(self.get_max_ticks())
 
+            # Translates the exit event object to a ExitHandler.
+            from .exit_handler import ExitHandler
+
+            exit_handler = ExitHandler(self._last_exit_event)
+
             # Translate the exit event cause to the exit event enum.
-            exit_enum = ExitEvent.translate_exit_status(
-                self.get_last_exit_event_cause()
-            )
-
-            # Check to see the run is corresponding to the expected execution
-            # order (assuming this check is demanded by the user).
-            if self._expected_execution_order:
-                expected_enum = self._expected_execution_order[
-                    self._exit_event_count
-                ]
-                if exit_enum.value != expected_enum.value:
-                    raise Exception(
-                        f"Expected a '{expected_enum.value}' exit event but a "
-                        f"'{exit_enum.value}' exit event was encountered."
-                    )
-
-            # Record the current tick and exit event enum.
-            self._tick_stopwatch.append((exit_enum, self.get_current_tick()))
-
-            try:
-                # If the user has specified their own generator for this exit
-                # event, use it.
-                exit_on_completion = next(self._on_exit_event[exit_enum])
-            except StopIteration:
-                # If the user's generator has ended, throw a warning and use
-                # the default generator for this exit event.
-                warn(
-                    "User-specified generator/function list for the exit "
-                    f"event'{exit_enum.value}' has ended. Using the default "
-                    "generator."
-                )
-                exit_on_completion = next(
-                    self._default_on_exit_dict[exit_enum]
-                )
-            except KeyError:
-                # If the user has not specified their own generator for this
-                # exit event, use the default.
-                exit_on_completion = next(
-                    self._default_on_exit_dict[exit_enum]
-                )
-
-            self._exit_event_count += 1
-
-            # If the generator returned True we will return from the Simulator
-            # run loop with the ExitEvent. (In the case of a function, instead
-            # of a generator, : if it also returned True).
-            if exit_on_completion:
-                return self._last_exit_event
+            if exit_handler.process_exit():
+                return self.exit_handler
 
     def save_checkpoint(self, checkpoint_dir: Path) -> None:
         """

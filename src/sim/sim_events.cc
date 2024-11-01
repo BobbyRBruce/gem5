@@ -54,16 +54,17 @@ namespace gem5
 
 GlobalSimLoopExitEvent::GlobalSimLoopExitEvent(Tick when,
                                                const std::string &_cause,
-                                               int c, Tick r)
-    : GlobalEvent(when, Sim_Exit_Pri, IsExitEvent),
+                                               int c, Tick r
+                                               )
+    :ExitEvent(when, ExitEvent::BACKWARDS_COMPATABLE_ID,
+    std::map<std::string, std::string>{}),
       cause(_cause), code(c), repeat(r)
 {
 }
 
 GlobalSimLoopExitEvent::GlobalSimLoopExitEvent(const std::string &_cause,
                                                int c, Tick r)
-    : GlobalEvent(curTick(), Minimum_Pri, IsExitEvent),
-      cause(_cause), code(c), repeat(r)
+    : GlobalSimLoopExitEvent(curTick(), _cause, c, r)
 {
 }
 
@@ -84,6 +85,43 @@ GlobalSimLoopExitEvent::process()
     }
 }
 
+ExitEvent::ExitEvent(Tick when, u_int64_t type_id,
+const std::map<std::string, std::string> &payload)
+ :GlobalEvent(when, Minimum_Pri, IsExitEvent), type_id(type_id),
+ payload(payload)
+{
+}
+
+ExitEvent::ExitEvent(u_int64_t type_id,
+const std::map<std::string, std::string> &payload):
+    ExitEvent(curTick(), type_id, payload)
+{
+}
+
+
+ExitEvent::~ExitEvent() {
+
+}
+
+std::map<std::string, std::string>
+ExitEvent::getPayload() const{
+    return payload;
+}
+
+uint64_t
+ExitEvent::getType() const{
+    return this->type_id;
+}
+
+const char*
+ExitEvent::description() const {
+    return "exit event (type id:" + std::to_string(this->getType()) + ")";
+}
+
+void ExitEvent::process() {
+}
+
+
 void
 exitSimLoop(const std::string &message, int exit_code, Tick when, Tick repeat,
             bool serialize)
@@ -92,14 +130,15 @@ exitSimLoop(const std::string &message, int exit_code, Tick when, Tick repeat,
             "exitSimLoop called with a delay and auto serialization. This is "
             "currently unsupported.");
 
-    new GlobalSimLoopExitEvent(when + simQuantum, message, exit_code, repeat);
+    new GlobalSimLoopExitEvent(when + simQuantum, message, exit_code, repeat));
 }
 
 void
-exitSimLoopNow(const std::string &message, int exit_code, Tick repeat,
+exitSimLoopNow(const std::string &message, int exit_code,Tick repeat,
                bool serialize)
 {
-    new GlobalSimLoopExitEvent(message, exit_code, repeat);
+
+    new GlobalSimLoopExitEvent(message, exit_code, repeat));
 }
 
 LocalSimLoopExitEvent::LocalSimLoopExitEvent(const std::string &_cause, int c,

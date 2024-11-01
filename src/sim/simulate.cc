@@ -184,16 +184,16 @@ struct DescheduleDeleter
  * via the 'set_max_tick' function prior. This function is exported to Python.
  * @return The SimLoopExitEvent that caused the loop to exit.
  */
-GlobalSimLoopExitEvent *global_exit_event= nullptr;
-GlobalSimLoopExitEvent *
+ExitEvent *exit_event= nullptr;
+ExitEvent *
 simulate(Tick num_cycles)
 {
     // install the sigint handler to catch ctrl-c and exit the sim loop cleanly
     // Note: This should be done before initializing the threads
     initSigInt();
 
-    if (global_exit_event)//cleaning last global exit event
-        global_exit_event->clean();
+    if (exit_event)//cleaning last global exit event
+        exit_event->clean();
     std::unique_ptr<GlobalSyncEvent, DescheduleDeleter> quantum_event;
 
     inform("Entering event queue @ %d.  Starting simulation...\n", curTick());
@@ -243,11 +243,12 @@ simulate(Tick num_cycles)
     BaseGlobalEvent *global_event = local_event->globalEvent();
     assert(global_event);
 
-    global_exit_event =
-        dynamic_cast<GlobalSimLoopExitEvent *>(global_event);
-    assert(global_exit_event);
+    exit_event = new ExitEvent(
+        *dynamic_cast<GlobalSimLoopExitEvent *>(global_event));
+    assert(exit_event);
 
-    return global_exit_event;
+
+    return exit_event;
 }
 
 void set_max_tick(Tick tick)
@@ -320,7 +321,7 @@ doSimLoop(EventQueue *eventq)
             if (async_get_tick) {
                 async_get_tick = false;
                 std::cout << "Exiting the Simulation Loop " << std::endl;
-                ExitEvent(curTick() + 1);
+                exitSimLoop("get_tick", 0, curTick(), 0, false);
             }
 
             //) {

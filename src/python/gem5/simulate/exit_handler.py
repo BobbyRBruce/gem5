@@ -26,7 +26,7 @@
 
 from abc import abstractmethod
 
-from m5.event import ExitEvent
+from m5.event import GlobalSimExitEvent as ExitEvent
 from m5.util import fatal
 
 from gem5.utils.override import overrides
@@ -48,7 +48,8 @@ class ExitHandler:
                 return cls._instance[exit_object]
 
         fatal(
-            f"ExitHandler type '{cls.get_type()}' does not match ExitEvent type '{exit_event.get_type()}'."
+            f"ExitHandler type '{cls.get_type()}' "
+            f"does not match ExitEvent type '{exit_event.get_type()}'."
         )
         return cls._instance
 
@@ -83,8 +84,10 @@ class ExitHandler:
         )
 
     @abstractmethod
-    def _reenter_sim(self) -> bool:
-        raise NotImplementedError("ExitHandler must implement `_resume_sim`.")
+    def _simloop_exit(self) -> bool:
+        raise NotImplementedError(
+            "ExitHandler must implement `_simloop_exit`."
+        )
 
 
 class UselessExitHandler(ExitHandler):
@@ -94,24 +97,25 @@ class UselessExitHandler(ExitHandler):
     """
 
     def get_type(cls) -> str:
-        return "useless"
+        return ""  # This is a fallback for the case that the type is not set.
 
     def _process_exit(self) -> None:
         pass
 
-    def _reenter_sim(self) -> bool:
-        return False
+    def _simloop_exit(self) -> bool:
+        return True
 
 
 class UserInterruptExit(ExitHandler):
     """This class is an ExitHandler that handles user interrupts (e.g.,
-    'cntr-c'). It will print the property "message" from the ExitEventpayload. Prior to exiting the
+    'cntr-c'). It will print the property "message" from the
+    "ExitEventpayload. Prior to exiting the
     simulation.
     """
 
     @overrides(ExitHandler)
-    def _reenter_sim(self) -> bool:
-        return True
+    def _simloop_exit(self) -> bool:
+        return False
 
     @overrides(ExitHandler)
     def get_type(self) -> str:

@@ -46,9 +46,9 @@
 namespace gem5
 {
 
-class GlobalSimLoopExitEvent;
+class ExitEvent;
 
-GlobalSimLoopExitEvent *simulate(Tick num_cycles = -1);
+ExitEvent *simulate(Tick num_cycles = -1);
 
 /**
  * @brief Set the maximum tick.

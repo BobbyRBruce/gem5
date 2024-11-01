@@ -205,56 +205,6 @@ class GlobalEvent : public BaseGlobalEventTemplate<GlobalEvent>
 };
 
 /**
- * `ExitEvent` is the base base for all Exit events. Exit events are events
- * which exit the simulation loop. The `ExitEvent` class is the most basic and
- * is used to exit the simulation loop immediately, with no further automatic
- * action or special data.
- */
-class ExitEvent : public GlobalEvent
-{
-  private:
-
-    const std::string type;
-
-    // Right now i'm just making this string to string but it could be better.
-    const std::map<std::string, std::string> payload;
-
-  public:
-
-    /**
-     * Used to create an ExitEvent that will exit the simulation loop
-     * immediately.
-     */
-    ExitEvent(
-        Tick when,
-        std::map<std::string, std::string> payload = {},
-        std::string type = "lazy" // Change this to something smarter.
-    ) : GlobalEvent(when, Sim_Exit_Pri, Flags(Scheduled & IsExitEvent)),
-        type(type), payload(payload)
-    {
-        schedule(when);
-    }
-
-    ~ExitEvent() {}
-
-    std::map<std::string, std::string> getPayload() const
-    {
-        return payload;
-    }
-
-    std::string getType() const
-    {
-        return type;
-    }
-
-    const char *description() const override {
-        return "ExitEvent: Exit the simulation with no further action.";
-   }
-
-    void process() override {}
-};
-
-/**
  * A special global event that synchronizes all threads and forces
  * them to process asynchronously enqueued events.  Useful for
  * separating quanta in a quantum-based parallel simulation.

@@ -133,19 +133,17 @@ pybind_init_event(py::module_ &m_native)
     // questionable. We currently assume they are owned by the C++
     // world. This is what the old SWIG code did, but that will result
     // in memory leaks.
-    py::class_<GlobalSimLoopExitEvent,
-               std::unique_ptr<GlobalSimLoopExitEvent, py::nodelete>>(
-               m, "GlobalSimLoopExitEvent")
-        .def("getCause", &GlobalSimLoopExitEvent::getCause)
-        .def("getCode", &GlobalSimLoopExitEvent::getCode)
+    py::class_<ExitEvent,
+                std::unique_ptr<ExitEvent, py::nodelete>>(m, "ExitEvent")
+        .def("getType", &ExitEvent::getType)
+        .def("getPayload", &ExitEvent::getPayload)
+
+        // Legacy API to make this backwards compatiblle with
+        // GlobalSimLoopExitEvent.
+        .def("getCause", &ExitEvent::getCause)
+        .def("getCode", &ExitEvent::getCode)
         ;
 
-    py::class_<ExitEvent,
-                std::unique_ptr<ExitEvent, py::nodelete>>(
-                m, "ExitEvent")
-          .def("description", &ExitEvent::description)
-          .def("getPayload", &ExitEvent::getPayload)
-          ;
 
     // Event base class. These should never be returned directly to
     // Python since they don't have a well-defined life cycle. Python
