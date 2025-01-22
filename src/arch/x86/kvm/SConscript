@@ -37,7 +37,8 @@
 
 Import('*')
 
-if not env['CONF']['USE_X86_ISA']:
+Return()
+if not env['CONF']['USE_X86_ISA'] or True:
     Return()
 
 SimObject(

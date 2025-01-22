@@ -37,6 +37,7 @@
 
 Import('*')
 
+Return()
 if env['CONF']['KVM_ISA'] != 'arm':
     Return()
 
