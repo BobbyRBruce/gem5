@@ -100,7 +100,7 @@ class Random
      * because the loader will initialize
      * it to 0x0 (it is in .bss), allowing us to avoid
      * Static Initialization Order Fiasco
-     * if static Random instances are inialized
+     * if static Random instances are initialized
      * before the vector by having the constructors
      * of Random allocate memory for the pointer.
      * This requires that nullptr matches how
