@@ -246,3 +246,69 @@ class WorkEndExitHandler(ExitHandler):
     @overrides(ExitHandler)
     def _exit_simulation(self) -> bool:
         return False
+
+
+# Tests for ExitHandler classes
+
+import unittest
+from unittest.mock import MagicMock
+
+class TestExitHandlers(unittest.TestCase):
+
+    def setUp(self):
+        self.simulator = MagicMock()
+        self.simulator.get_last_exit_event_cause.return_value = "m5_exit instruction encountered"
+        self.simulator._expected_execution_order = None
+        self.simulator._exit_event_count = 0
+        self.simulator._tick_stopwatch = []
+        self.simulator._on_exit_event = {}
+        self.simulator._default_on_exit_dict = {}
+
+    def test_classic_generator_exit_handler(self):
+        handler = ClassicGeneratorExitHandler({})
+        handler._process(self.simulator)
+        self.assertEqual(len(self.simulator._tick_stopwatch), 1)
+        self.assertEqual(self.simulator._tick_stopwatch[0][0], ExitEvent.EXIT)
+
+    def test_scheduled_exit_event_handler(self):
+        handler = ScheduledExitEventHandler({})
+        handler._process(self.simulator)
+        self.assertTrue(handler._exit_simulation())
+
+    def test_kernel_booted_exit_handler(self):
+        handler = KernelBootedExitHandler({})
+        handler._process(self.simulator)
+        self.assertFalse(handler._exit_simulation())
+
+    def test_after_boot_exit_handler(self):
+        handler = AfterBootExitHandler({})
+        handler._process(self.simulator)
+        self.assertFalse(handler._exit_simulation())
+
+    def test_after_boot_script_exit_handler(self):
+        handler = AfterBootScriptExitHandler({})
+        handler._process(self.simulator)
+        self.assertTrue(handler._exit_simulation())
+
+    def test_to_tick_exit_handler(self):
+        handler = ToTickExitHandler({})
+        handler._process(self.simulator)
+        self.assertTrue(handler._exit_simulation())
+
+    def test_checkpoint_exit_handler(self):
+        handler = CheckpointExitHandler({})
+        handler._process(self.simulator)
+        self.assertFalse(handler._exit_simulation())
+
+    def test_work_begin_exit_handler(self):
+        handler = WorkBeginExitHandler({})
+        handler._process(self.simulator)
+        self.assertFalse(handler._exit_simulation())
+
+    def test_work_end_exit_handler(self):
+        handler = WorkEndExitHandler({})
+        handler._process(self.simulator)
+        self.assertFalse(handler._exit_simulation())
+
+if __name__ == "__main__":
+    unittest.main()

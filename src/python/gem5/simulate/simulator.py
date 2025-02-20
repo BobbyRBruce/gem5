@@ -839,3 +839,48 @@ class Simulator:
                                will be saved.
         """
         m5.checkpoint(str(checkpoint_dir))
+
+# Tests for Simulator class
+
+import unittest
+from unittest.mock import MagicMock, patch
+
+class TestSimulator(unittest.TestCase):
+
+    def setUp(self):
+        self.board = MagicMock()
+        self.simulator = Simulator(board=self.board)
+
+    def test_set_id(self):
+        self.simulator.set_id("test_id")
+        self.assertEqual(self.simulator.get_id(), "test_id")
+
+    def test_set_max_ticks(self):
+        self.simulator.set_max_ticks(1000)
+        self.assertEqual(self.simulator.get_max_ticks(), 1000)
+
+    def test_schedule_simpoint(self):
+        self.simulator.schedule_simpoint([100, 200, 300])
+        self.board.get_processor().get_cores()[0].set_simpoint.assert_called_with([100, 200, 300], False)
+
+    def test_schedule_max_insts(self):
+        self.simulator.schedule_max_insts(1000)
+        for core in self.board.get_processor().get_cores():
+            core._set_inst_stop_any_thread.assert_called_with(1000, False)
+
+    @patch("m5.stats.gem5stats.get_simstat")
+    def test_get_simstats(self, mock_get_simstat):
+        self.simulator._instantiated = True
+        self.simulator._root = MagicMock()
+        self.simulator.get_simstats()
+        mock_get_simstat.assert_called_with(self.simulator._root)
+
+    def test_override_outdir(self):
+        new_outdir = Path("/tmp/new_outdir")
+        with patch("m5.options") as mock_options, patch("_m5.core.setOutputDir") as mock_setOutputDir:
+            self.simulator.override_outdir(new_outdir)
+            self.assertEqual(mock_options.outdir, str(new_outdir))
+            mock_setOutputDir.assert_called_with(mock_options.outdir)
+
+if __name__ == "__main__":
+    unittest.main()

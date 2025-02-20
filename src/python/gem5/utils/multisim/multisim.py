@@ -53,6 +53,7 @@ import importlib
 import multiprocessing
 import signal
 import time
+import psutil
 from multiprocessing import Lock
 from pathlib import Path
 from typing import (
@@ -227,8 +228,24 @@ def run(module_path: Path, processes: Optional[int] = None) -> None:
     signal.signal(signal.SIGINT, handle_exit)
     signal.signal(signal.SIGTERM, handle_exit)
 
+    def get_system_load():
+        """Get the current system load as a percentage."""
+        return psutil.cpu_percent(interval=1)
+
+    def adjust_num_processes():
+        """Adjust the number of processes based on system load."""
+        load = get_system_load()
+        if load > 80:
+            return max(1, max_num_processes - 1)
+        elif load < 50:
+            return min(max_num_processes, max_num_processes + 1)
+        return max_num_processes
+
     try:
         while remaining_ids or active_processes:
+            # Adjust the number of processes based on system load
+            max_num_processes = adjust_num_processes()
+
             # Start new processes if available
             while remaining_ids and len(active_processes) < max_num_processes:
                 id_to_run = remaining_ids.pop()
@@ -254,6 +271,9 @@ def run(module_path: Path, processes: Optional[int] = None) -> None:
                     for process in active_processes
                     if process.is_alive()
                 ]
+    except Exception as e:
+        inform(f"An error occurred: {e}")
+        handle_exit(None, None)
     finally:
         handle_exit(None, None)
 
@@ -333,7 +353,7 @@ def add_simulator(simulator: "Simulator") -> None:
                 "If running this script directly as a configuration script "
                 "then a single argument must be specified: the id of the "
                 "simulator to run. This will run the simulation associated "
-                "with that id and no other. If the intent is instead to run "
+                with that id and no other. If the intent is instead to run "
                 "the script via the MultiSim utility then run this script via "
                 "the multisim module: "
                 "`<gem5> -m gem5.utils.multisim <config_script>`.\n\n"
