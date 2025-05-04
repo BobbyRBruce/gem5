@@ -18,16 +18,47 @@ jobs:
               id: date
               run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
 
+    get-testlib-very-long-dirs:
+        name: Obtain target directories for Testlib very-long tests
+        runs-on: [self-hosted, linux, x64]
+        container: ghcr.io/gem5/ubuntu-24.04_all-dependencies:latest
+        timeout-minutes: 10
+        steps:
+            - uses: actions/checkout@v4
+            - name: Get directories for testlib-very-long
+              working-directory: ${{ github.workspace }}/tests
+              id: dir-matrix
+              run: |
+                  echo "testlib-very-long-dirs=$(\
+                    ./main.py list gem5 \
+                    --length=very-long \
+                    --suites \
+                    --exclude-tags gcn_gpu | \
+                    grep "$SUITEUID:" | \
+                    cut -d: -f2 | \
+                    cut -d/ -f 3- | \
+                    xargs dirname | \
+                    sort -u  | \
+                    PREV=""; \
+                    while read x; do \
+                      if [[ "$x" != "${PREV}/"* ]]; then \
+                        PREV=$x; \
+                        echo "${x}"; \
+                      fi; \
+                    done  | \
+                    jq -ncR '[inputs]'\
+                  )" >>$GITHUB_ENV
+
     # start running the very-long tests
     testlib-very-long-tests:
         strategy:
             fail-fast: false
             matrix:
-                test-type: [gem5_library_example_tests, gem5_resources, stdlib, parsec_benchmarks, x86_boot_tests]
+                test-type: ${{ fromJson(env.testlib-very-long-dirs) }}
         runs-on: [self-hosted, linux, x64]
         container: ghcr.io/gem5/ubuntu-24.04_all-dependencies:latest
         timeout-minutes: 4320 # 3 days
-        needs: get-date
+        needs: [get-date, get-testlib-very-long-dirs]
         steps:
             - name: Clean runner
               run: rm -rf ./* || true rm -rf ./.??* || true rm -rf ~/.cache || true
