@@ -86,7 +86,7 @@ jobs:
               run: |
                   echo "test-dirs-matrix=$(\
                     ./main.py list gem5 \
-                    --suites  | \
+                    --suites \
                     --exclude-tags gcn_gpu | \
                     grep "$SUITEUID:" | \
                     cut -d: -f2 | \
