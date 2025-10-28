@@ -38,6 +38,15 @@ build_current = Dir(".").abspath
 src_root = Dir(".").srcnode().abspath
 scons_root = Dir("#").abspath
 
+if not env["CONF"].get("USE_SYSTEMC", False):
+    warning(
+        "DRAMSys requires SystemC support. Enable SystemC "
+        "(e.g., `scons setconfig <build_dir> USE_SYSTEMC=1`) on a "
+        "platform where it is supported to build DRAMSys."
+    )
+    env["HAVE_DRAMSYS"] = False
+    Return()
+
 # See if we got a cloned DRAMSys repo as a subdirectory and set the
 # HAVE_DRAMSys flag accordingly
 if not os.path.exists(Dir(".").srcnode().abspath + "/DRAMSys"):
