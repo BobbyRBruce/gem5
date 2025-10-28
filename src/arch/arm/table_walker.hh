@@ -1196,7 +1196,7 @@ class WalkUnit : public ClockedObject
         BaseMMU::Mode mode;
         MMU::ArmTranslationType tranType;
 
-        TableWalker::Port *port;
+        [[maybe_unused]] TableWalker::Port *port;
 
       public:
         Fault fault;
