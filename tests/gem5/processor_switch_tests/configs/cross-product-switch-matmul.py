@@ -50,7 +50,7 @@ parser.add_argument("--isa", type=str, required=True)
 args = parser.parse_args()
 
 
-class ScheduledProcessorSwitchHandler(ExitHandler, hypercall_num=6):
+class ScheduledProcessorSwitchHandler(ExitHandler, hypercall="ScheduledExit"):
     process_count = 0
 
     @overrides(ExitHandler)

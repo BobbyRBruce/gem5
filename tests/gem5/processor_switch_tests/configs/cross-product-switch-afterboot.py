@@ -109,7 +109,7 @@ class WorkBeginExit(WorkBeginExitHandler):
         return False
 
 
-class ScheduledStatsDumpHandler(ExitHandler, hypercall_num=6):
+class ScheduledStatsDumpHandler(ExitHandler, hypercall="ScheduledExit"):
     process_count = 0
 
     @overrides(ExitHandler)

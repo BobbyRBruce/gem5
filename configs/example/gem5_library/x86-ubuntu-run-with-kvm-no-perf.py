@@ -124,7 +124,7 @@ board.set_workload(workload)
 # behaviors map to which hypercalls, and what the default behaviors are.
 
 
-class CustomKernelBootedExitHandler(ExitHandler, hypercall_num=1):
+class CustomKernelBootedExitHandler(ExitHandler, hypercall="KernelBooted"):
     @overrides(ExitHandler)
     def _process(self, simulator: "Simulator") -> None:
         print("First exit: kernel booted")
@@ -146,7 +146,7 @@ class SwitchProcessorAfterBootExitHandler(AfterBootExitHandler):
         return False
 
 
-class AfterBootScriptExitHandler(ExitHandler, hypercall_num=3):
+class AfterBootScriptExitHandler(ExitHandler, hypercall="AfterBootScript"):
     @overrides(ExitHandler)
     def _process(self, simulator: "Simulator") -> None:
         print(f"Third exit: {self.get_handler_description()}")

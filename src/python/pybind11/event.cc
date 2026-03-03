@@ -43,6 +43,8 @@
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 
+#include <utility>
+
 #include "base/logging.hh"
 #include "sim/eventq.hh"
 #include "sim/sim_events.hh"
@@ -111,12 +113,41 @@ pybind_init_event(py::module_ &m_native)
     m.def("getMaxTick", &get_max_tick, py::return_value_policy::copy);
     m.def("terminateEventQueueThreads", &terminateEventQueueThreads);
     m.def("exitSimLoop", &exitSimLoop);
-    m.def("exitSimulationLoop", &exitSimulationLoop);
+    m.def(
+        "exitSimulationLoop",
+        [](uint64_t type_id,
+           std::map<std::string, std::string> payload =
+               std::map<std::string, std::string>(),
+           py::object when = py::none()) {
+            const Tick tick = when.is_none() ? curTick() : when.cast<Tick>();
+            exitSimulationLoop(type_id, std::move(payload), tick);
+        },
+        py::arg("type_id"),
+        py::arg("payload") = std::map<std::string, std::string>(),
+        py::arg("when") = py::none());
+    m.def(
+        "exitSimulationLoop",
+        [](ExitHypercall type_id,
+           std::map<std::string, std::string> payload =
+               std::map<std::string, std::string>(),
+           py::object when = py::none()) {
+            const Tick tick = when.is_none() ? curTick() : when.cast<Tick>();
+            exitSimulationLoop(type_id, std::move(payload), tick);
+        },
+        py::arg("type_id"),
+        py::arg("payload") = std::map<std::string, std::string>(),
+        py::arg("when") = py::none());
     m.def("getEventQueue", []() { return curEventQueue(); },
           py::return_value_policy::reference);
     m.def("setEventQueue", [](EventQueue *q) { return curEventQueue(q); });
     m.def("getEventQueue", &getEventQueue,
           py::return_value_policy::reference);
+
+    auto exit_hypercall = py::enum_<ExitHypercall>(m, "ExitHypercall");
+    for (const auto &desc : kExitHypercallDescriptors) {
+        exit_hypercall.value(desc.name, desc.id, desc.description);
+    }
+    exit_hypercall.export_values();
 
     py::class_<EventQueue>(m, "EventQueue")
         .def("name",  [](EventQueue *eq) { return eq->name(); })

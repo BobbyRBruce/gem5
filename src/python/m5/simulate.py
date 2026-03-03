@@ -343,7 +343,7 @@ def scheduleTickExitAbsolute(
         _m5_event.exitSimLoop(exit_string, 0, tick, 0, False)
     else:
         _m5_event.exitSimulationLoop(
-            6,
+            _m5_event.ExitHypercall.ScheduledExit,
             {
                 "scheduled_at_tick": str(curTick()),
                 "justification": exit_string,

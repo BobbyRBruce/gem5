@@ -36,6 +36,7 @@ extern "C" {
 #include <stdint.h>
 
 #include <gem5/asm/generic/m5ops.h>
+#include <gem5/exit_hypercalls.hh>
 
 void m5_arm(uint64_t address);
 void m5_quiesce(void);
@@ -66,6 +67,17 @@ void m5_load_symbol();
 void m5_panic(void);
 void m5_work_begin(uint64_t workid, uint64_t threadid);
 void m5_work_end(uint64_t workid, uint64_t threadid);
+/*
+ * Trigger a hypercall-based exit. Use the M5_HYPERCALL_* constants below (or
+ * the C++ gem5::ExitHypercall enum) instead of hard-coding numeric IDs.
+ */
+enum
+{
+#define GEM5_DECLARE_M5_HYPERCALL(enum_name, macro_name, value, desc)         \
+    M5_HYPERCALL_##macro_name = value, /* desc */
+    GEM5_FOREACH_EXIT_HYPERCALL(GEM5_DECLARE_M5_HYPERCALL)
+#undef GEM5_DECLARE_M5_HYPERCALL
+};
 void m5_hypercall(uint64_t hypercall_id);
 /*
  * Send a very generic poke to the workload so it can do something. It's up to

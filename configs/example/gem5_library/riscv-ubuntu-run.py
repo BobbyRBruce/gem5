@@ -110,7 +110,7 @@ class CustomKernelBootedExitHandler(KernelBootedExitHandler):
         return False
 
 
-class CustomAfterBootExitHandler(ExitHandler, hypercall_num=2):
+class CustomAfterBootExitHandler(ExitHandler, hypercall="AfterBoot"):
     @overrides(ExitHandler)
     def _process(self, simulator: "Simulator") -> None:
         print("Second exit: Started `after_boot.sh` script")
@@ -120,7 +120,7 @@ class CustomAfterBootExitHandler(ExitHandler, hypercall_num=2):
         return False
 
 
-class AfterBootScriptExitHandler(ExitHandler, hypercall_num=3):
+class AfterBootScriptExitHandler(ExitHandler, hypercall="AfterBootScript"):
     @overrides(ExitHandler)
     def _process(self, simulator: "Simulator") -> None:
         print(f"Third exit: {self.get_handler_description()}")

@@ -131,7 +131,7 @@ exit_order = []
 from gem5.simulate.exit_handler import ExitHandler
 
 
-class KernelBootedDumpReset(ExitHandler, hypercall_num=1):
+class KernelBootedDumpReset(ExitHandler, hypercall="KernelBooted"):
     def _process(self, simulator: "Simulator") -> None:
         print("Dumping and resetting stats after kernel boot! Hypercall 1")
         m5.stats.dump()
@@ -142,7 +142,7 @@ class KernelBootedDumpReset(ExitHandler, hypercall_num=1):
         return False
 
 
-class AfterBootDumpReset(ExitHandler, hypercall_num=2):
+class AfterBootDumpReset(ExitHandler, hypercall="AfterBoot"):
     def _process(self, simulator: "Simulator") -> None:
         print("Dumping and resetting stats after Ubuntu boot! Hypercall 2")
         m5.stats.dump()
@@ -153,7 +153,7 @@ class AfterBootDumpReset(ExitHandler, hypercall_num=2):
         return False
 
 
-class AfterBootScriptDumpReset(ExitHandler, hypercall_num=3):
+class AfterBootScriptDumpReset(ExitHandler, hypercall="AfterBootScript"):
     def _process(self, simulator: "Simulator") -> None:
         print(
             "Dumping and resetting stats before exiting simulation! Hypercall 3"
@@ -166,7 +166,7 @@ class AfterBootScriptDumpReset(ExitHandler, hypercall_num=3):
         return True
 
 
-class WorkBeginDumpReset(ExitHandler, hypercall_num=4):
+class WorkBeginDumpReset(ExitHandler, hypercall="WorkBegin"):
     def _process(self, simulator: "Simulator") -> None:
         m5.stats.dump()
         m5.stats.reset()
@@ -177,7 +177,7 @@ class WorkBeginDumpReset(ExitHandler, hypercall_num=4):
         return False
 
 
-class WorkEndDumpReset(ExitHandler, hypercall_num=5):
+class WorkEndDumpReset(ExitHandler, hypercall="WorkEnd"):
     def _process(self, simulator: "Simulator") -> None:
         print("Dumping and resetting stats at ROI end! Hypercall 5")
         m5.stats.dump()
