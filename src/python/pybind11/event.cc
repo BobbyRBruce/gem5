@@ -69,19 +69,20 @@ namespace gem5
 class PyEvent : public Event
 {
   public:
-    PyEvent(Event::Priority priority)
-        : Event(priority, Event::Managed)
-    {
-    }
+    PyEvent(Event::Priority priority) : Event(priority, Event::Managed) {}
 
-    void process() override {
+    void
+    process() override
+    {
         // Call the Python implementation as __call__. This provides a
         // slightly more Python-friendly interface.
         PYBIND11_OVERLOAD_PURE_NAME(void, PyEvent, "__call__", process);
     }
 
   protected:
-    void acquireImpl() override {
+    void
+    acquireImpl() override
+    {
         py::object obj = py::cast(this);
 
         if (obj) {
@@ -91,7 +92,9 @@ class PyEvent : public Event
         }
     }
 
-    void releaseImpl() override {
+    void
+    releaseImpl() override
+    {
         py::object obj = py::cast(this);
 
         if (obj) {
@@ -107,12 +110,31 @@ pybind_init_event(py::module_ &m_native)
 {
     py::module_ m = m_native.def_submodule("event");
 
-    m.def("simulate", &simulate,
-          py::arg("ticks") = MaxTick);
+    m.def("simulate", &simulate, py::arg("ticks") = MaxTick);
     m.def("setMaxTick", &set_max_tick, py::arg("tick"));
     m.def("getMaxTick", &get_max_tick, py::return_value_policy::copy);
     m.def("terminateEventQueueThreads", &terminateEventQueueThreads);
-    m.def("exitSimLoop", &exitSimLoop);
+    /* Python-level deprecation wrapper for the legacy exitSimLoop API.
+     * Preserve the original behavior and ABI but emit a DeprecationWarning
+     * so Python callers start migrating to exitSimulationLoop.
+     */
+    m.def(
+        "exitSimLoop",
+        [](const std::string &message, int exit_code = 0,
+           py::object when = py::none(), py::object repeat = py::none(),
+           bool serialize = false) {
+            const Tick tick = when.is_none() ? curTick() : when.cast<Tick>();
+            const Tick repeat_tick =
+                repeat.is_none() ? 0 : repeat.cast<Tick>();
+            py::module_ warnings = py::module_::import("warnings");
+            warnings.attr("warn")(
+                "exitSimLoop is deprecated; prefer exitSimulationLoop",
+                py::module_::import("builtins").attr("DeprecationWarning"));
+            exitSimLoop(message, exit_code, tick, repeat_tick, serialize);
+        },
+        py::arg("message"), py::arg("exit_code") = 0,
+        py::arg("when") = py::none(), py::arg("repeat") = py::none(),
+        py::arg("serialize") = false);
     m.def(
         "exitSimulationLoop",
         [](uint64_t type_id,
@@ -137,11 +159,29 @@ pybind_init_event(py::module_ &m_native)
         py::arg("type_id"),
         py::arg("payload") = std::map<std::string, std::string>(),
         py::arg("when") = py::none());
-    m.def("getEventQueue", []() { return curEventQueue(); },
-          py::return_value_policy::reference);
+    m.def(
+        "exitSimLoopWithHypercall",
+        [](const std::string &message, int exit_code, py::object when,
+           py::object repeat, std::map<std::string, std::string> payload,
+           uint64_t hypercall_id, bool serialize) {
+            const Tick tick = when.is_none() ? curTick() : when.cast<Tick>();
+            const Tick repeat_tick =
+                repeat.is_none() ? 0 : repeat.cast<Tick>();
+            exitSimLoopWithHypercall(message, exit_code, tick, repeat_tick,
+                                     std::move(payload), hypercall_id,
+                                     serialize);
+        },
+        py::arg("message"), py::arg("exit_code") = 0,
+        py::arg("when") = py::none(), py::arg("repeat") = py::none(),
+        py::arg("payload") = std::map<std::string, std::string>(),
+        py::arg("hypercall_id") =
+            static_cast<uint64_t>(ExitHypercall::ClassicGenerator),
+        py::arg("serialize") = false);
+    m.def(
+        "getEventQueue", []() { return curEventQueue(); },
+        py::return_value_policy::reference);
     m.def("setEventQueue", [](EventQueue *q) { return curEventQueue(q); });
-    m.def("getEventQueue", &getEventQueue,
-          py::return_value_policy::reference);
+    m.def("getEventQueue", &getEventQueue, py::return_value_policy::reference);
 
     auto exit_hypercall = py::enum_<ExitHypercall>(m, "ExitHypercall");
     for (const auto &desc : kExitHypercallDescriptors) {
@@ -150,16 +190,15 @@ pybind_init_event(py::module_ &m_native)
     exit_hypercall.export_values();
 
     py::class_<EventQueue>(m, "EventQueue")
-        .def("name",  [](EventQueue *eq) { return eq->name(); })
+        .def("name", [](EventQueue *eq) { return eq->name(); })
         .def("dump", &EventQueue::dump)
-        .def("schedule", [](EventQueue *eq, PyEvent *e, Tick t) {
-                eq->schedule(e, t);
-            }, py::arg("event"), py::arg("when"))
-        .def("deschedule", &EventQueue::deschedule,
-             py::arg("event"))
-        .def("reschedule", &EventQueue::reschedule,
-             py::arg("event"), py::arg("tick"), py::arg("always") = false)
-        ;
+        .def(
+            "schedule",
+            [](EventQueue *eq, PyEvent *e, Tick t) { eq->schedule(e, t); },
+            py::arg("event"), py::arg("when"))
+        .def("deschedule", &EventQueue::deschedule, py::arg("event"))
+        .def("reschedule", &EventQueue::reschedule, py::arg("event"),
+             py::arg("tick"), py::arg("always") = false);
 
     // TODO: Ownership of global exit events has always been a bit
     // questionable. We currently assume they are owned by the C++
@@ -167,37 +206,32 @@ pybind_init_event(py::module_ &m_native)
     // in memory leaks.
     py::class_<GlobalSimLoopExitEvent,
                std::unique_ptr<GlobalSimLoopExitEvent, py::nodelete>>(
-               m, "GlobalSimLoopExitEvent")
+        m, "GlobalSimLoopExitEvent")
         .def("getCause", &GlobalSimLoopExitEvent::getCause)
         .def("getCode", &GlobalSimLoopExitEvent::getCode)
         .def("getPayload", &GlobalSimLoopExitEvent::getPayload)
-        .def("getHypercallId", &GlobalSimLoopExitEvent::getHypercallId)
-        ;
+        .def("getHypercallId", &GlobalSimLoopExitEvent::getHypercallId);
 
     // Event base class. These should never be returned directly to
     // Python since they don't have a well-defined life cycle. Python
     // events should be derived from PyEvent instead.
-    py::class_<Event> c_event(
-        m, "Event");
-    c_event
-        .def("name", &Event::name)
+    py::class_<Event> c_event(m, "Event");
+    c_event.def("name", &Event::name)
         .def("dump", &Event::dump)
         .def("scheduled", &Event::scheduled)
         .def("squash", &Event::squash)
         .def("squashed", &Event::squashed)
         .def("isExitEvent", &Event::isExitEvent)
         .def("when", &Event::when)
-        .def("priority", &Event::priority)
-        ;
+        .def("priority", &Event::priority);
 
     py::class_<PyEvent, Event>(m, "PyEvent")
         .def(py::init<Event::Priority>(),
-             py::arg("priority") = (int)Event::Default_Pri)
-        ;
+             py::arg("priority") = (int)Event::Default_Pri);
 
-#define PRIO(n) c_event.attr(# n) = py::cast((int)Event::n)
+#define PRIO(n) c_event.attr(#n) = py::cast((int)Event::n)
     PRIO(Minimum_Pri);
-    PRIO(Minimum_Pri);
+    PRIO(CPU_Exit_Pri);
     PRIO(Debug_Enable_Pri);
     PRIO(Debug_Break_Pri);
     PRIO(CPU_Switch_Pri);

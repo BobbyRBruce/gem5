@@ -24,6 +24,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+"""Exit handler helpers for the gem5 Python stdlib.
+
+This module provides a small framework that maps guest-facing hypercall
+identifiers (integers or descriptive names) to Python ExitHandler classes
+registered by users or the standard library. The mapping is exposed across
+layers: guest M5_HYPERCALL_* macros, C++ ExitHypercall enum, and Python
+ExitHandler registration.
+"""
+
 import json
 import socket
 from abc import (
@@ -40,6 +49,7 @@ from typing import (
     Optional,
     Type,
     Union,
+    overload,
 )
 
 import m5
@@ -130,7 +140,7 @@ class ExitHandlerMeta(ABCMeta):
                     break
             assert hypercall_id is not None, (
                 f"Hypercall identifier must be provided for {name}. Use "
-                "`class {name}(ExitHandler, hypercall=<hypercall>):`"
+                f"`class {name}(ExitHandler, hypercall=<hypercall>):`"
             )
             ExitHandler._handler_map[hypercall_id] = cls
             cls._handler_id = hypercall_id
@@ -141,11 +151,11 @@ class ExitHandlerMeta(ABCMeta):
 class ExitHandler(metaclass=ExitHandlerMeta):
 
     _handler_map: Dict[int, Type["ExitHandler"]] = {}
-    _handler_id: int = None
+    _handler_id: Optional[int] = None
 
     @classmethod
-    def get_handler_id(cls) -> int:
-        """Returns the ID of the exit handler"""
+    def get_handler_id(cls) -> Optional[int]:
+        """Returns the ID of the exit handler (or None for the base class)."""
         return cls._handler_id
 
     @classmethod
@@ -178,7 +188,7 @@ class ExitHandler(metaclass=ExitHandlerMeta):
 
 def _ExitHandlerFactory(
     hypercall: HypercallSelector,
-    func: Callable[["Simulator"], bool],
+    func: Callable[["Simulator", Dict[str, str]], bool],
     description: str,
 ) -> Type[ExitHandler]:
     """Factory for creating ExitHandlers bound to a specific hypercall."""
@@ -186,7 +196,7 @@ def _ExitHandlerFactory(
     resolved_id = _resolve_hypercall_id(hypercall)
 
     class NewExitHandler(ExitHandler, hypercall=resolved_id):
-        def __init__(self, payload):
+        def __init__(self, payload: Dict[str, str]) -> None:
             super().__init__(payload)
             self.should_exit = False
             self.description = description
@@ -202,9 +212,29 @@ def _ExitHandlerFactory(
     return NewExitHandler
 
 
+@overload
+def register_exit_handler(
+    hypercall: HypercallSelector,
+    func: Callable[["Simulator", Dict[str, str]], bool],
+    description: str,
+    *,
+    hypercall_num: None = None,
+) -> Type[ExitHandler]: ...
+
+
+@overload
+def register_exit_handler(
+    hypercall: None,
+    func: Callable[["Simulator", Dict[str, str]], bool],
+    description: str,
+    *,
+    hypercall_num: HypercallSelector,
+) -> Type[ExitHandler]: ...
+
+
 def register_exit_handler(
     hypercall: Optional[HypercallSelector],
-    func: Callable[["Simulator", dict], bool],
+    func: Callable[["Simulator", Dict[str, str]], bool],
     description: str,
     *,
     hypercall_num: Optional[HypercallSelector] = None,
@@ -212,8 +242,8 @@ def register_exit_handler(
     """Register a new exit handler for the provided hypercall.
 
     ``hypercall`` (or the legacy ``hypercall_num`` keyword) may be an ``int``,
-    a string matching one of the ``ExitHypercall`` members (case-insensitive,
-    supporting ``snake_case`` or ``CamelCase``), or an
+    a string matching one of the ``ExitHypercall`` members (supported forms:
+    ``snake_case``, PascalCase, or UPPER_SNAKE), or an
     ``_m5.event.ExitHypercall`` enum value.
 
     Args:
@@ -236,15 +266,16 @@ def register_exit_handler(
 class ScheduledExitEventHandler(
     ExitHandler, hypercall=_m5_event.ExitHypercall.ScheduledExit
 ):
-    """A handler designed to be the default for  an Exit scheduled to occur
-    at a specified tick. For example, these Exit exits can be triggered through be
-    src/python/m5/simulate.py's `scheduleTickExitFromCurrent` and
-    `scheduleTickExitAbsolute` functions.
+    """Default handler for exits scheduled to occur at a specific tick.
 
-    It will exit the simulation loop by default.
+    For example, these exits can be scheduled via the
+    `scheduleTickExitFromCurrent` and `scheduleTickExitAbsolute` functions
+    in src/python/m5/simulate.py.
 
-    The `justification` and `scheduled_at_tick` methods are provided to give
-    richer information about this schedule exit.
+    This handler exits the simulation loop by default.
+
+    The `justification` and `scheduled_at_tick` methods provide additional
+    metadata about the scheduled exit.
     """
 
     @overrides(ExitHandler)
@@ -254,12 +285,12 @@ class ScheduledExitEventHandler(
     def justification(self) -> Optional[str]:
         """Returns the justification for the scheduled exit event.
 
-        This information may be passed to when scheduling the event event to
+        This information may be passed when scheduling the event to
         remind the user why the event was scheduled, or used in cases where
         lots of scheduled events are used and there is a need to differentiate
         them.
 
-        Returns "None" if this information was not set.
+        Returns None if this information was not set.
         """
         return (
             None
@@ -271,7 +302,7 @@ class ScheduledExitEventHandler(
         """Returns the tick in which the event was scheduled on (not scheduled
         to occur, but the tick the event was created).
 
-        Returns "None" if this information is not available.
+        Returns None if this information is not available.
         """
         return (
             None
@@ -755,7 +786,7 @@ class ClassicGeneratorExitHandler(
 
         except KeyError:
             # If the user has not specified their own generator for this
-            # exit event, use the default.
+            # event, use the default.
             self._exit_on_completion = next(
                 self._default_on_exit_dict[exit_enum]
             )

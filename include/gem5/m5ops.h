@@ -36,7 +36,7 @@ extern "C" {
 #include <stdint.h>
 
 #include <gem5/asm/generic/m5ops.h>
-#include <gem5/exit_hypercalls.hh>
+#include <gem5/hypercall_ids.h>
 
 void m5_arm(uint64_t address);
 void m5_quiesce(void);
@@ -49,8 +49,8 @@ void m5_wake_cpu(uint64_t cpuid);
 void m5_exit(uint64_t ns_delay);
 void m5_fail(uint64_t ns_delay, uint64_t code);
 // m5_sum is for sanity checking the gem5 op interface.
-unsigned m5_sum(unsigned a, unsigned b, unsigned c,
-                unsigned d, unsigned e, unsigned f);
+unsigned m5_sum(unsigned a, unsigned b, unsigned c, unsigned d, unsigned e,
+                unsigned f);
 uint64_t m5_init_param(uint64_t key_str1, uint64_t key_str2);
 void m5_checkpoint(uint64_t ns_delay, uint64_t ns_period);
 void m5_reset_stats(uint64_t ns_delay, uint64_t ns_period);
@@ -68,16 +68,11 @@ void m5_panic(void);
 void m5_work_begin(uint64_t workid, uint64_t threadid);
 void m5_work_end(uint64_t workid, uint64_t threadid);
 /*
- * Trigger a hypercall-based exit. Use the M5_HYPERCALL_* constants below (or
- * the C++ gem5::ExitHypercall enum) instead of hard-coding numeric IDs.
+ * Trigger a hypercall-based exit. Guest code should use the M5_HYPERCALL_*
+ * constants from include/gem5/hypercall_ids.h instead of hard-coding numeric
+ * IDs. The simulator-side C++ enum (gem5::ExitHypercall) is derived from the
+ * same central mapping; ensure any changes remain consistent.
  */
-enum
-{
-#define GEM5_DECLARE_M5_HYPERCALL(enum_name, macro_name, value, desc)         \
-    M5_HYPERCALL_##macro_name = value, /* desc */
-    GEM5_FOREACH_EXIT_HYPERCALL(GEM5_DECLARE_M5_HYPERCALL)
-#undef GEM5_DECLARE_M5_HYPERCALL
-};
 void m5_hypercall(uint64_t hypercall_id);
 /*
  * Send a very generic poke to the workload so it can do something. It's up to
@@ -88,16 +83,19 @@ void m5_hypercall(uint64_t hypercall_id);
 void m5_workload();
 
 /*
- * Create _addr and _semi versions all declarations, e.g. m5_exit_addr and
- * m5_exit_semi. These expose the the memory and semihosting variants of the
+ * Create _addr and _semi versions of all declarations, e.g. m5_exit_addr and
+ * m5_exit_semi. These expose the memory and semihosting variants of the
  * ops.
  *
- * Some of those declarations are not defined for certain ISAs, e.g. X86
- * does not have _semi, but we felt that ifdefing them out could cause more
- * trouble tham leaving them in.
+ * Some of those declarations are not defined for certain ISAs (e.g., x86).
+ * For example, x86 does not provide a _semi variant. Rather than #ifdef-ing
+ * these declarations out (which can cause more compatibility issues), we
+ * keep the declarations present even if some ISAs don't implement the
+ * corresponding variants.
  */
-#define M5OP(name, func) __typeof__(name) M5OP_MERGE_TOKENS(name, _addr); \
-                         __typeof__(name) M5OP_MERGE_TOKENS(name, _semi);
+#define M5OP(name, func)                                                      \
+    __typeof__(name) M5OP_MERGE_TOKENS(name, _addr);                          \
+    __typeof__(name) M5OP_MERGE_TOKENS(name, _semi);
 M5OP_FOREACH
 #undef M5OP
 

@@ -96,4 +96,38 @@ __all__ = [
     "SimExit",
     "mainq",
     "create",
+    "exitSimLoop",
 ]
+
+
+def exitSimLoop(message, exit_code=0, when=None, repeat=0, serialize=False):
+    """Deprecated compatibility wrapper.
+
+    Preserve the original signature of the legacy ``exitSimLoop`` helper but
+    use the hypercall-aware legacy scheduling path so handlers can observe
+    structured metadata. A DeprecationWarning is emitted to prompt users to
+    migrate.
+    """
+    import warnings
+
+    warnings.warn(
+        "exitSimLoop is deprecated; use exitSimulationLoop with an ExitHypercall",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+    payload = {"cause": str(message), "code": str(int(exit_code))}
+    hypercall_id = int(_m5.event.ExitHypercall.ClassicGenerator.value)
+
+    # Use the transitional C++ helper so this compatibility wrapper keeps the
+    # legacy message/code, delay, repeat, and simQuantum behavior while also
+    # attaching structured hypercall metadata for ExitHandlers.
+    _m5.event.exitSimLoopWithHypercall(
+        str(message),
+        int(exit_code),
+        when,
+        repeat,
+        payload,
+        hypercall_id,
+        serialize,
+    )

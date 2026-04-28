@@ -26,29 +26,17 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * Compatibility shim for code still including exit_hypercalls.hh.
+ *
+ * Historically exit_hypercalls.hh provided the GEM5_FOREACH_EXIT_HYPERCALL
+ * macro. That central mapping now lives in hypercall_ids.h. Keep this header
+ * as a thin compatibility shim to avoid breakage during the transition.
+ */
+
 #ifndef __GEM5_EXIT_HYPERCALLS_HH__
 #define __GEM5_EXIT_HYPERCALLS_HH__
 
-/**
- * Central list of hypercall-driven exit handlers. The list is expressed as a
- * macro so multiple translation units (C and C++) can derive enums, constants,
- * and documentation without duplicating the mapping.
- *
- * OP arguments: (EnumName, MacroName, Value, Description)
- */
-#define GEM5_FOREACH_EXIT_HYPERCALL(OP)                                       \
-    OP(ClassicGenerator, CLASSIC_GENERATOR, 0,                                \
-       "Legacy generator-based exit handling (ExitEvent translation)")        \
-    OP(KernelBooted, KERNEL_BOOTED, 1, "Guest kernel reported it has booted") \
-    OP(AfterBoot, AFTER_BOOT, 2, "Guest entered the after_boot hook")         \
-    OP(AfterBootScript, AFTER_BOOT_SCRIPT, 3,                                 \
-       "Guest completed after_boot.sh")                                       \
-    OP(WorkBegin, WORK_BEGIN, 4, "Entered a region-of-interest (workbegin)")  \
-    OP(WorkEnd, WORK_END, 5, "Exited a region-of-interest (workend)")         \
-    OP(ScheduledExit, SCHEDULED_EXIT, 6,                                      \
-       "Simulator scheduled tick/max-tick exit")                              \
-    OP(Checkpoint, CHECKPOINT, 7, "Take a checkpoint and continue running")   \
-    OP(Orchestrator, ORCHESTRATOR, 1000,                                      \
-       "Orchestrator control/status hypercall")
+#include <gem5/hypercall_ids.h>
 
 #endif // __GEM5_EXIT_HYPERCALLS_HH__

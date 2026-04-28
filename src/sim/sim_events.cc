@@ -127,13 +127,17 @@ exitSimLoopNow(const std::string &message, int exit_code, Tick repeat,
 }
 
 void
-exitSimLoopWithHypercall (const::std::string &message, int exit_code,
-                Tick when, Tick repeat, std::map<std::string,
-                std::string> payload, uint64_t hypercall_id,
-                bool serialize)
+exitSimLoopWithHypercall(const std::string &message, int exit_code, Tick when,
+                         Tick repeat,
+                         std::map<std::string, std::string> payload,
+                         uint64_t hypercall_id, bool serialize)
 {
+    warn_if(serialize && (when != curTick() || repeat),
+            "exitSimLoopWithHypercall called with a delay and auto "
+            "serialization. This is currently unsupported.");
+
     new GlobalSimLoopExitEvent(when + simQuantum, message, exit_code, repeat,
-                hypercall_id, payload);
+                               hypercall_id, payload);
 }
 /**
  * The "new style" exitSimLoop functions.

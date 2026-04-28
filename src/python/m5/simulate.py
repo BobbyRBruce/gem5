@@ -75,7 +75,7 @@ _instantiated = False  # Has m5.instantiate() been called?
 
 
 def _fix_all_objects(root):
-    """Makes all parameters concrete of all objects that are childred of root."""
+    """Makes all parameters concrete of all objects that are children of root."""
     # we need to fix the global frequency
     ticks.fixGlobalFrequency()
 
@@ -145,9 +145,9 @@ def _dump_configs(
 
 
 def _create_cpp_objects(root, ckpt_dir):
-    """Does simboject initialization.
+    """Does SimObject initialization.
 
-    1. Instatiates C++ classes (calls the constructors)
+    1. Instantiates C++ classes (calls the constructors)
     2. Calls `init()` on each object (the C++ function)
     3. Calls `regStats` on each "group"
     4. Registers the probe points (must be after regStats)
@@ -328,6 +328,10 @@ def scheduleTickExitAbsolute(
 
     The default ``exit_string`` value is used by the stdlib Simulator module to
     declare this exit event as ``ExitEvent.SCHEDULED_TICK``.
+
+    Note: when a non-default ``exit_string`` is provided, this function uses
+    the newer ExitHypercall mechanism via ``_m5_event.exitSimulationLoop`` to
+    convey structured exit metadata to the simulator core.
 
     :param tick: The absolute simulation tick to schedule the exit event.
     :param exit_string: The exit string to return when the exit event is

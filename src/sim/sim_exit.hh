@@ -84,6 +84,7 @@ void registerExitCallback(const std::function<void()> &);
  * hypercall-based APIs below so Python ExitHandlers can dispatch on a specific
  * ID and payload.
  */
+/// DEPRECATED: Prefer exitSimulationLoop (hypercall-based).
 void exitSimLoop(const std::string &message, int exit_code = 0,
                  Tick when = curTick(), Tick repeat = 0,
                  bool serialize = false);
